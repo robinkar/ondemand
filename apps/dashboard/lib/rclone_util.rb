@@ -66,6 +66,33 @@ class RcloneUtil
       end
     end
 
+    def touch(remote, path)
+      full_path = "#{remote}:#{path}"
+      o, e, s = rclone("touch", full_path)
+      if !s.success?
+        raise "Error creating file: #{e}"
+      end
+    end
+
+    def mkdir(remote, path)
+      full_path = "#{remote}:#{path}"
+      o, e, s = rclone("mkdir", full_path)
+      # TODO: detect when Rclone remote doesn't support empty dirs (e.g. S3) and
+      # raise a suitable error message.
+      if !s.success?
+        raise "Error creating directory: #{e}"
+      end
+    end
+
+    def write(remote, path, content)
+      full_path = "#{remote}:#{path}"
+      # Write to a file on the remote by passing the file contents in stdin
+      o, e, s = rclone("rcat", full_path, stdin_data: content)
+      if !s.success?
+        raise "Error writing file: #{e}"
+      end
+    end
+
     def remote_type(remote)
       # Get the rclone remote type (e.g. s3) for a single remote
       o, e, s = rclone("listremotes", "--long")

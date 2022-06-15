@@ -46,13 +46,23 @@ class RcloneUtil
       end
     end
 
-    def cat(remote, path)
+    def cat(remote, path, &block)
       full_path = "#{remote}:#{path}"
-      o, e, s = rclone("cat", full_path)
-      if s.success?
-        o
+      # Read the file in 32kb chunks
+      if block_given?
+        run_popen(rclone_cmd, "cat", full_path) do |o|
+          while data = o.read(32768)
+            yield data
+          end
+        end
       else
-        raise "Error reading file #{full_path}: #{e}"
+        # Read the whole file
+        o, e, s = rclone("cat", full_path)
+        if s.success?
+          o
+        else
+          raise "Error reading file #{full_path}: #{e}"
+        end
       end
     end
 
@@ -76,6 +86,26 @@ class RcloneUtil
 
     def rclone(*args)
       Open3.capture3(rclone_cmd, *args)
+    end
+
+    def run_popen(cmd, *args, stdin_data: nil, &block)
+      Open3.popen3(cmd, *args) do |i, o, e, t|
+        if stdin_data
+          i.write(stdin_data)
+        end
+        i.close
+
+        err_reader = Thread.new { e.read }
+
+        yield o
+
+        o.close
+        exit_status = t.value
+        err = err_reader.value.to_s.strip
+        if err.present? || !exit_status.success?
+          raise "Rclone exited with status #{exit_status.exitstatus}\n#{err}"
+        end
+      end
     end
   end
 end

@@ -102,6 +102,15 @@ class RcloneUtil
       end
     end
 
+    def remotes
+      o, e, s = rclone("listremotes")
+      if s.success?
+        remotes = o.lines.map {|l| l.gsub(/:$/, "").strip}
+      else
+        raise "Error listing remotes: #{e}"
+      end
+    end
+
     def remote_type(remote)
       # Get the rclone remote type (e.g. s3) for a single remote
       o, e, s = rclone("listremotes", "--long")

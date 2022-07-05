@@ -150,7 +150,7 @@ class FilesController < ApplicationController
 
   def edit
     @path = parse_path
-    @file_api_url = OodAppkit.files.api(path: @path).to_s
+    @file_api_url = files_path(@path).to_s
 
     if @path.editable?
       @content = @path.read

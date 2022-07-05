@@ -67,6 +67,10 @@ class RemoteFile
     RcloneUtil.write(@remote, @path, content)
   end
 
+  def handle_upload(tempfile)
+    RcloneUtil.moveto(@remote, @path, tempfile.path)
+  end
+
   def mime_type
     # Rclone does not return same mime types as `file -b --mime-type` used in PosixFile
     # Results in shell scripts not being viewable as they are application/x-sh and not text/x-shellscript

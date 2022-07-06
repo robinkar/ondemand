@@ -22,10 +22,16 @@ RUN dnf -y update && \
 RUN sed -i 's#^CREATE_MAIL_SPOOL=yes#CREATE_MAIL_SPOOL=no#' /etc/default/useradd; \
     grep $GID /etc/group >/dev/null || groupadd -g $GID $USER; \
     useradd -l -u $UID --create-home --gid $GID $USER && \
+    sudo -u $USER mkdir -p /home/$USER/ondemand && \
     echo "$USER ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/$USER
 
 RUN sed -i 's|--rpm|--rpm -f --insecure|g' /etc/systemd/system/httpd.service.d/ood-portal.conf
 RUN systemctl enable httpd ondemand-dex
+
+ARG APP_DEV_DIR="/home/$USER/ondemand/dev"
+ARG OOD_DEV_DIR="/var/www/ood/apps/dev/$USER"
+
+RUN mkdir -p $OOD_DEV_DIR && cd $OOD_DEV_DIR && ln -s $APP_DEV_DIR gateway
 
 CMD [ "/sbin/init" ]
 
